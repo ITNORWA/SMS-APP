@@ -1,0 +1,10 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Header",
+ "module": "SMS App",
+ "istable": 1,
+ "fields": [
+  { "fieldname": "key", "label": "Key", "fieldtype": "Data", "reqd": 1 },
+  { "fieldname": "value", "label": "Value", "fieldtype": "Data", "reqd": 1 }
+ ]
+}

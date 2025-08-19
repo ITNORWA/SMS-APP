@@ -1,0 +1,11 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Recipient",
+ "module": "SMS App",
+ "istable": 1,
+ "fields": [
+  { "fieldname": "receiver_by_document_field", "label": "Receiver By Document Field", "fieldtype": "Data" },
+  { "fieldname": "static_phone_number", "label": "Static Phone Number", "fieldtype": "Data" },
+  { "fieldname": "condition", "label": "Condition", "fieldtype": "Small Text" }
+ ]
+}

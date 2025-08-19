@@ -1,0 +1,18 @@
+include MANIFEST.in
+include requirements.txt
+include *.json
+include *.md
+include *.py
+include *.txt
+recursive-include sms_app *.css
+recursive-include sms_app *.csv
+recursive-include sms_app *.html
+recursive-include sms_app *.ico
+recursive-include sms_app *.js
+recursive-include sms_app *.json
+recursive-include sms_app *.md
+recursive-include sms_app *.png
+recursive-include sms_app *.py
+recursive-include sms_app *.svg
+recursive-include sms_app *.txt
+recursive-exclude sms_app *.pyc

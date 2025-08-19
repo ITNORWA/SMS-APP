@@ -1,0 +1,20 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Log",
+ "module": "SMS App",
+ "custom": 0,
+ "fields": [
+  { "fieldname": "status", "label": "Status", "fieldtype": "Select", "options": "Queued\nSent\nFailed" },
+  { "fieldname": "provider", "label": "Provider", "fieldtype": "Link", "options": "SMS Provider" },
+  { "fieldname": "template", "label": "Template", "fieldtype": "Link", "options": "SMS Template" },
+  { "fieldname": "document_type", "label": "Document Type", "fieldtype": "Data" },
+  { "fieldname": "document_name", "label": "Document Name", "fieldtype": "Data" },
+  { "fieldname": "recipients", "label": "Recipients", "fieldtype": "Small Text" },
+  { "fieldname": "payload", "label": "Payload", "fieldtype": "Long Text" },
+  { "fieldname": "response", "label": "Response", "fieldtype": "Long Text" },
+  { "fieldname": "error", "label": "Error", "fieldtype": "Long Text" },
+  { "fieldname": "message_id", "label": "Message ID", "fieldtype": "Data" }
+ ],
+ "istable": 0,
+ "track_changes": 1
+}

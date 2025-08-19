@@ -1,0 +1,27 @@
+{
+ "doctype": "DocType",
+ "name": "SMS Template",
+ "module": "SMS App",
+ "custom": 0,
+ "fields": [
+  { "fieldname": "template_name", "label": "Template Name", "fieldtype": "Data", "reqd": 1, "unique": 1 },
+  { "fieldname": "enabled", "label": "Enabled", "fieldtype": "Check", "default": "1" },
+  { "fieldname": "provider", "label": "Provider", "fieldtype": "Link", "options": "SMS Provider", "reqd": 1 },
+  { "fieldname": "document_type", "label": "Document Type", "fieldtype": "Link", "options": "DocType", "reqd": 1 },
+  { "fieldname": "trigger_event", "label": "Trigger Event", "fieldtype": "Select", "options": "on_submit\non_update_after_submit\non_cancel\nvalue_change\ndays_before\ndays_after" },
+  { "fieldname": "value_change_field", "label": "Value Change Field", "fieldtype": "Data" },
+  { "fieldname": "condition", "label": "Condition (Python Expression)", "fieldtype": "Code" },
+  { "fieldname": "receiver_phone_field", "label": "Receiver Phone Field", "fieldtype": "Data" },
+  { "fieldname": "message_type", "label": "Message Type", "fieldtype": "Select", "options": "Transactional\nPromotional" },
+  { "fieldname": "dlr_url", "label": "DLR URL", "fieldtype": "Data" },
+  { "fieldname": "message", "label": "Message", "fieldtype": "Text Editor" },
+
+  {
+    "fieldname": "recipients",
+    "label": "Recipients",
+    "fieldtype": "Table",
+    "options": "SMS Recipient"
+  }
+ ],
+ "istable": 0
+}
