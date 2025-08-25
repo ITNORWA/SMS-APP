@@ -1,7 +1,7 @@
 app_name = "sms_app"
 app_title = "SMS App"
 app_publisher = "Norwa Africa"
-app_email = "it@norwa.africa"
+app_email = "it-department@norwaafrica.com"
 app_license = "MIT"
 
 # Fire a universal handler and filter internally by templates
