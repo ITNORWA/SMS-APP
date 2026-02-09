@@ -106,8 +106,32 @@ def _log(status, template_doc, doc, recipients, payload, response):
     log.insert(ignore_permissions=True)
     frappe.db.commit()
 
-@frappe.whitelist()
-def send_test(provider:str, to:str, message:str):
-    """Manual test from Desk."""
     status, payload, resp = send_sms(provider, message, [to])
     return {"status": status, "payload": payload, "response": resp}
+
+@frappe.whitelist(allow_guest=False)
+def send_sms_relay(receiver, message, provider="MTech"):
+    """
+    Relay endpoint for ERPNext SMS Settings.
+    ERPNext sends: receiver (string), message (string).
+    We forward to our MTech client (which handles auth).
+    """
+    # ERPNext might send a single number or list, usually single for notifications
+    if isinstance(receiver, str):
+        receivers = [receiver]
+    else:
+        receivers = receiver
+
+    status, payload, resp = send_sms(
+        provider_name=provider,
+        message=message,
+        msisdns=receivers,
+        extra={"message_type": "Transactional"} # Default for notifications
+    )
+
+    # Return standard response that might be logged by ERPNext
+    return {
+        "status": status,
+        "message": "SMS Queued" if status=="Sent" else "Failed",
+        "details": resp
+    }

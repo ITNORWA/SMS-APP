@@ -26,8 +26,8 @@ def _ensure_token(provider):
     if not provider.token:
         needs_refresh = True
     elif provider.token_expiry:
-        # refresh 60 seconds before expiry
-        needs_refresh = (provider.token_expiry - now_datetime()).total_seconds() < 60
+        # refresh if less than 5 minutes remaining (safety buffer)
+        needs_refresh = (provider.token_expiry - now_datetime()).total_seconds() < 300
 
     if not needs_refresh:
         return
@@ -130,3 +130,20 @@ def send(provider_name:str, message:str, msisdns:list, dlr_url:str=None, extra:d
 
     status = "Sent" if res.ok else "Failed"
     return status, payload, data
+
+def refresh_all_tokens():
+    """Scheduled task to refresh tokens for all enabled providers."""
+    providers = frappe.get_all("SMS Provider", filters={"enabled": 1}, pluck="name")
+    for p_name in providers:
+        try:
+            p = frappe.get_doc("SMS Provider", p_name)
+            # Force refresh if close to expiry, or just ensure it's valid
+            _ensure_token(p)
+             # If we want to be aggressive about the "hourly" requirement:
+             # _ensure_token checks if < 60s. 
+             # Use a stricter check here or just rely on the fact this runs every 50 mins.
+             # If the token expires in 1 hour, and we run every 50 mins:
+             # Run 1 (T=0): Expires in 60m. _ensure_token might skip if it thinks it's fine.
+             # We should probably lower the threshold in _ensure_token or logic below.
+        except Exception:
+            frappe.log_error(f"Failed to refresh token for {p_name}")
