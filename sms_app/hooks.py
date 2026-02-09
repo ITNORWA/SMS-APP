@@ -15,8 +15,10 @@ doc_events = {
 }
 
 scheduler_events = {
-    # Optional: daily token refresh, retry failed, days_before/after
-    # "cron": {
-    #   "*/10 * * * *": ["sms_app.api.retry_queued"]
-    # 
+    # Refresh tokens every 50 minutes (MTech expires in 60m)
+    "cron": {
+        "*/50 * * * *": [
+            "sms_app.sms_client.refresh_all_tokens"
+        ]
     }
+}
