@@ -7,8 +7,8 @@ name = "sms_app"
 version = "0.0.1"
 description = "Generic SMS integration app for Frappe/ERPNext"
 authors = [
-    { name="Ronald Ambundo", email="ronald8@norwaafrica.com"
-      name="Stacey Marrion", email="staceynorwaafrica@gmail.com" }
+    { name="Ronald Ambundo", email="ronald8@norwaafrica.com" },
+    { name="Stacey Marrion", email="staceynorwaafrica@gmail.com" }
 ]
 readme = "README.md"
 requires-python = ">=3.10"

@@ -3,22 +3,16 @@ app_title = "SMS App"
 app_publisher = "Norwa Africa"
 app_email = "it-department@norwaafrica.com"
 app_license = "MIT"
+app_description = "Mtech SMS integration app for Frappe/ERPNext"
 
-# Fire a universal handler and filter internally by templates
-doc_events = {
-    "*": {
-        "on_submit": "sms_app.api.handle_doc_event",
-        "on_update_after_submit": "sms_app.api.handle_doc_event",
-        "on_cancel": "sms_app.api.handle_doc_event",
-        # value_change/days_* can be handled via scheduler if you need later
-    }
-}
+# Mtech-only: no generic DocType triggers
+doc_events = {}
 
 scheduler_events = {
-    # Refresh tokens every 50 minutes (MTech expires in 60m)
+    # Refresh tokens every 50 minutes (Mtech expires in 60m)
     "cron": {
         "*/50 * * * *": [
-            "sms_app.sms_client.refresh_all_tokens"
+            "sms_app.mtech.token_manager.refresh_token"
         ]
     }
 }

@@ -1,0 +1,48 @@
+{
+    "doctype":  "DocType",
+    "name":  "Mtech SMS Settings",
+    "module":  "Mtech",
+    "custom":  0,
+    "issingle":  1,
+    "fields":  [
+                   {
+                       "fieldname":  "api_username",
+                       "label":  "API Username",
+                       "fieldtype":  "Data"
+                   },
+                   {
+                       "fieldname":  "api_password",
+                       "label":  "API Password",
+                       "fieldtype":  "Password"
+                   },
+                   {
+                       "fieldname":  "sender_id",
+                       "label":  "Sender ID",
+                       "fieldtype":  "Data"
+                   },
+                   {
+                       "fieldname":  "api_base_url",
+                       "label":  "API Base URL",
+                       "fieldtype":  "Data"
+                   },
+                   {
+                       "fieldname":  "access_token",
+                       "label":  "Access Token",
+                       "fieldtype":  "Small Text",
+                       "read_only":  1
+                   },
+                   {
+                       "fieldname":  "token_expiry",
+                       "label":  "Token Expiry",
+                       "fieldtype":  "Datetime",
+                       "read_only":  1
+                   }
+               ],
+    "permissions":  [
+                        {
+                            "write":  1,
+                            "read":  1,
+                            "role":  "System Manager"
+                        }
+                    ]
+}

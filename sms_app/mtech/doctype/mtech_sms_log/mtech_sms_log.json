@@ -1,0 +1,57 @@
+{
+    "doctype":  "DocType",
+    "name":  "Mtech SMS Log",
+    "module":  "Mtech",
+    "custom":  0,
+    "fields":  [
+                   {
+                       "fieldname":  "mobile_number",
+                       "label":  "To Mobile",
+                       "fieldtype":  "Phone"
+                   },
+                   {
+                       "fieldname":  "message_content",
+                       "label":  "Message",
+                       "fieldtype":  "Small Text"
+                   },
+                   {
+                       "fieldname":  "status",
+                       "label":  "Status",
+                       "fieldtype":  "Select",
+                       "options":  "Queued\nSent\nFailed"
+                   },
+                   {
+                       "fieldname":  "api_response",
+                       "label":  "API Response",
+                       "fieldtype":  "Code"
+                   },
+                   {
+                       "fieldname":  "sent_on",
+                       "label":  "Sent On",
+                       "fieldtype":  "Datetime",
+                       "default":  "Now"
+                   },
+                   {
+                       "fieldname":  "reference_doctype",
+                       "label":  "Reference DocType",
+                       "fieldtype":  "Link",
+                       "options":  "DocType"
+                   },
+                   {
+                       "fieldname":  "reference_doc",
+                       "label":  "Reference",
+                       "fieldtype":  "Dynamic Link",
+                       "options":  "reference_doctype"
+                   }
+               ],
+    "track_changes":  1,
+    "permissions":  [
+                        {
+                            "write":  1,
+                            "create":  1,
+                            "read":  1,
+                            "delete":  1,
+                            "role":  "System Manager"
+                        }
+                    ]
+}
