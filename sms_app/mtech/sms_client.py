@@ -1,3 +1,5 @@
+import json
+import re
 import requests
 import frappe
 from uuid import uuid4
@@ -11,6 +13,44 @@ def _build_message_id():
     return uuid4().hex
 
 
+def _normalize_msisdns(mobile_numbers):
+    if mobile_numbers is None:
+        return []
+
+    if isinstance(mobile_numbers, (list, tuple, set)):
+        raw = list(mobile_numbers)
+    elif isinstance(mobile_numbers, str):
+        cleaned = mobile_numbers.strip()
+        if not cleaned:
+            raw = []
+        else:
+            parsed = None
+            if cleaned[0] in ("[", "{"):
+                try:
+                    parsed = frappe.parse_json(cleaned)
+                except Exception:
+                    try:
+                        parsed = json.loads(cleaned)
+                    except Exception:
+                        parsed = None
+            if isinstance(parsed, (list, tuple, set)):
+                raw = list(parsed)
+            else:
+                raw = re.split(r"[,\n;]+", cleaned)
+    else:
+        raw = [mobile_numbers]
+
+    msisdns = []
+    for item in raw:
+        if item is None:
+            continue
+        value = str(item).strip()
+        if not value:
+            continue
+        msisdns.append(value.lstrip("+"))
+    return msisdns
+
+
 def send_sms(
     mobile_number,
     message,
@@ -21,12 +61,25 @@ def send_sms(
     message_id=None,
     encrypted=0,
     encryption_method=None,
+    return_response=False,
 ):
     """
     Main function to send SMS.
     Handles Token logic, API calling, and Logging.
     """
     settings = frappe.get_single("Mtech SMS Settings")
+
+    msisdns = _normalize_msisdns(mobile_number)
+    if not msisdns:
+        create_sms_log(
+            mobile_number,
+            message,
+            "Failed",
+            "No valid mobile numbers provided",
+            reference_doctype,
+            reference_doc,
+        )
+        return False
 
     # 1. Get a valid token (Gate Pass)
     token = get_valid_token()
@@ -40,13 +93,12 @@ def send_sms(
         "Accept": "application/json",
     }
 
-    msisdn = str(mobile_number).lstrip("+") if mobile_number is not None else ""
     payload = {
         "message_id": message_id or _build_message_id(),
         "message": message,
         "sender": settings.sender_id,
         "message_type": message_type or "Transactional",
-        "msisdns": [msisdn],
+        "msisdns": msisdns,
     }
 
     if dlr_url:
@@ -89,13 +141,20 @@ def send_sms(
 
     # 5. Write to Diary (Log DocType)
     create_sms_log(
-        mobile_number,
+        msisdns,
         message,
         status,
         api_response,
         reference_doctype,
         reference_doc,
     )
+
+    if return_response:
+        return {
+            "success": status == "Sent",
+            "status": status,
+            "response": api_response,
+        }
 
     return status == "Sent"
 
@@ -104,18 +163,20 @@ def create_sms_log(mobile, message, status, response, ref_dt, ref_dn):
     """
     Creates a record in 'Mtech SMS Log'
     """
-    log = frappe.get_doc(
-        {
-            "doctype": "Mtech SMS Log",
-            "mobile_number": mobile,
-            "message_content": message,
-            "status": status,
-            "api_response": response,
-            "sent_on": frappe.utils.now(),
-            # Optional: Link to invoice/customer if provided
-            "reference_doctype": ref_dt,
-            "reference_doc": ref_dn,
-        }
-    )
-    log.insert(ignore_permissions=True)
+    mobiles = mobile if isinstance(mobile, (list, tuple, set)) else [mobile]
+    for item in mobiles:
+        log = frappe.get_doc(
+            {
+                "doctype": "Mtech SMS Log",
+                "mobile_number": item,
+                "message_content": message,
+                "status": status,
+                "api_response": response,
+                "sent_on": frappe.utils.now(),
+                # Optional: Link to invoice/customer if provided
+                "reference_doctype": ref_dt,
+                "reference_doc": ref_dn,
+            }
+        )
+        log.insert(ignore_permissions=True)
     frappe.db.commit()

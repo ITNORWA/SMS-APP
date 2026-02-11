@@ -14,6 +14,11 @@ def send_sms_via_server_script(mobile, message, message_type=None, dlr_url=None,
         dlr_url="https://example.com/callback",
         message_id="your-id",
     )
+
+    The `mobile` argument can be:
+    - A single number string
+    - A list/tuple of numbers
+    - A comma/semicolon/newline-separated string of numbers
     """
     return _send(
         mobile,

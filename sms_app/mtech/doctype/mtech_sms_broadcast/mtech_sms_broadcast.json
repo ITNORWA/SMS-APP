@@ -1,0 +1,68 @@
+{
+    "doctype": "DocType",
+    "name": "Mtech SMS Broadcast",
+    "module": "Mtech",
+    "custom": 0,
+    "autoname": "hash",
+    "fields": [
+        {
+            "fieldname": "message",
+            "label": "Message",
+            "fieldtype": "Small Text",
+            "reqd": 1
+        },
+        {
+            "fieldname": "mobile_numbers",
+            "label": "Mobile Numbers",
+            "fieldtype": "Small Text",
+            "reqd": 1,
+            "description": "Comma/semicolon/newline separated or JSON list."
+        },
+        {
+            "fieldname": "message_type",
+            "label": "Message Type",
+            "fieldtype": "Select",
+            "options": "Transactional\nPromotional",
+            "default": "Transactional"
+        },
+        {
+            "fieldname": "dlr_url",
+            "label": "DLR URL",
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "message_id",
+            "label": "Message ID",
+            "fieldtype": "Data"
+        },
+        {
+            "fieldname": "status",
+            "label": "Status",
+            "fieldtype": "Select",
+            "options": "Draft\nSent\nFailed",
+            "default": "Draft",
+            "read_only": 1
+        },
+        {
+            "fieldname": "sent_on",
+            "label": "Sent On",
+            "fieldtype": "Datetime",
+            "read_only": 1
+        },
+        {
+            "fieldname": "last_response",
+            "label": "Last Response",
+            "fieldtype": "Code",
+            "read_only": 1
+        }
+    ],
+    "permissions": [
+        {
+            "write": 1,
+            "create": 1,
+            "read": 1,
+            "delete": 1,
+            "role": "System Manager"
+        }
+    ]
+}
