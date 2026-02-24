@@ -11,6 +11,19 @@ def get_settings():
     return frappe.get_single("Mtech SMS Settings")
 
 
+def _get_api_password(settings):
+    try:
+        password = settings.get_password("api_password")
+    except Exception:
+        password = None
+
+    if password:
+        return password
+
+    # Fallback for legacy/plain values.
+    return (settings.api_password or "").strip()
+
+
 def _build_url(base_url: str, endpoint: str) -> str:
     return f"{(base_url or '').rstrip('/')}{endpoint}"
 
@@ -21,7 +34,7 @@ def _validate_settings(settings):
         missing.append("API Base URL")
     if not settings.api_username:
         missing.append("API Username")
-    if not settings.api_password:
+    if not _get_api_password(settings):
         missing.append("API Password")
     if missing:
         frappe.throw("Missing Mtech SMS Settings fields: " + ", ".join(missing))
@@ -34,18 +47,19 @@ def login_and_refresh_token():
     """
     settings = get_settings()
     _validate_settings(settings)
+    api_password = _get_api_password(settings)
 
     # 1. Prepare Payload
     payload = {
         "username": settings.api_username,
-        "password": settings.api_password,
+        "password": api_password,
     }
 
     try:
         # 2. Call Mtech Login API
         url = _build_url(settings.api_base_url, LOGIN_ENDPOINT)
         response = requests.post(url, json=payload, timeout=10)
-        response.raise_for_status()  # Raise error if login fails
+        response.raise_for_status()  # Transport-level error
 
         data = response.json() or {}
         data_block = data.get("data") or {}
@@ -66,9 +80,23 @@ def login_and_refresh_token():
             or data.get("expires_at")
             or data.get("expires_in")
         )
+        provider_status = (
+            data.get("status")
+            or data_block.get("status")
+            or response.status_code
+        )
+        provider_message = data.get("message") or data_block.get("message") or ""
+        status_ok = provider_status in (200, 201, "200", "201")
 
         if not new_token:
-            frappe.throw("Mtech login succeeded but no token was returned.")
+            detail = provider_message or response.text[:300]
+            if not status_ok:
+                frappe.throw(
+                    f"Mtech login rejected by provider (status {provider_status}): {detail}"
+                )
+            frappe.throw(
+                f"Mtech login response did not include a token. Provider message: {detail}"
+            )
 
         # 4. Calculate Expiry Time
         # expires_at is a unix timestamp (seconds) or expires_in (seconds)
@@ -105,7 +133,7 @@ def debug_login_response():
     url = _build_url(settings.api_base_url, LOGIN_ENDPOINT)
     payload = {
         "username": settings.api_username,
-        "password": settings.api_password,
+        "password": _get_api_password(settings),
     }
     response = requests.post(url, json=payload, timeout=10)
     try:
