@@ -31,7 +31,12 @@ def send_sms_via_server_script(mobile, message, message_type=None, dlr_url=None,
 
 def ensure_mtech_modules():
     """Ensure Mtech DocTypes are mapped to the Mtech module."""
-    doctypes = ["Mtech SMS Settings", "Mtech SMS Log"]
+    doctypes = [
+        "Mtech SMS Settings",
+        "Mtech SMS Template",
+        "Mtech SMS Broadcast",
+        "Mtech SMS Log",
+    ]
     updated = []
     for dt in doctypes:
         if frappe.db.exists("DocType", dt):
@@ -46,7 +51,12 @@ def ensure_mtech_modules():
 def debug_mtech_doctypes():
     """Return existence + module info for Mtech DocTypes."""
     info = {}
-    for dt in ["Mtech SMS Settings", "Mtech SMS Log"]:
+    for dt in [
+        "Mtech SMS Settings",
+        "Mtech SMS Template",
+        "Mtech SMS Broadcast",
+        "Mtech SMS Log",
+    ]:
         exists = frappe.db.exists("DocType", dt)
         module = frappe.db.get_value("DocType", dt, "module") if exists else None
         info[dt] = {"exists": bool(exists), "module": module}

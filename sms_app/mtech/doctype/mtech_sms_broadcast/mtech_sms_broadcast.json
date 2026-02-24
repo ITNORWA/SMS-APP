@@ -3,13 +3,40 @@
     "name": "Mtech SMS Broadcast",
     "module": "Mtech",
     "custom": 0,
-    "autoname": "hash",
+    "autoname": "naming_series:",
     "fields": [
+        {
+            "fieldname": "naming_series",
+            "label": "Series",
+            "fieldtype": "Select",
+            "options": "SMS-BROADCAST-.YYYY.-.#####",
+            "default": "SMS-BROADCAST-.YYYY.-.#####",
+            "reqd": 1
+        },
         {
             "fieldname": "message",
             "label": "Message",
+            "fieldtype": "Small Text"
+        },
+        {
+            "fieldname": "sms_template",
+            "label": "SMS Template",
+            "fieldtype": "Link",
+            "options": "Mtech SMS Template",
+            "description": "Optional reusable template."
+        },
+        {
+            "fieldname": "template_values",
+            "label": "Template Values (JSON)",
+            "fieldtype": "Code",
+            "options": "JSON",
+            "description": "JSON placeholder values e.g. {\"name\": \"Asha\"}"
+        },
+        {
+            "fieldname": "rendered_message",
+            "label": "Rendered Message",
             "fieldtype": "Small Text",
-            "reqd": 1
+            "read_only": 1
         },
         {
             "fieldname": "mobile_numbers",
@@ -39,15 +66,38 @@
             "fieldname": "status",
             "label": "Status",
             "fieldtype": "Select",
-            "options": "Draft\nSent\nFailed",
+            "options": "Draft\nSent\nPartially Sent\nFailed",
             "default": "Draft",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "total_recipients",
+            "label": "Total Recipients",
+            "fieldtype": "Int",
+            "default": "0",
+            "read_only": 1
+        },
+        {
+            "fieldname": "sent_recipients",
+            "label": "Sent Recipients",
+            "fieldtype": "Int",
+            "default": "0",
+            "read_only": 1
+        },
+        {
+            "fieldname": "failed_recipients",
+            "label": "Failed Recipients",
+            "fieldtype": "Int",
+            "default": "0",
             "read_only": 1
         },
         {
             "fieldname": "sent_on",
             "label": "Sent On",
             "fieldtype": "Datetime",
-            "read_only": 1
+            "read_only": 1,
+            "in_list_view": 1
         },
         {
             "fieldname": "last_response",

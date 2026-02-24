@@ -1,0 +1,45 @@
+{
+    "doctype": "DocType",
+    "name": "Mtech SMS Template",
+    "module": "Mtech",
+    "custom": 0,
+    "autoname": "field:template_name",
+    "title_field": "template_name",
+    "fields": [
+        {
+            "fieldname": "template_name",
+            "label": "Template Name",
+            "fieldtype": "Data",
+            "reqd": 1,
+            "unique": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "description",
+            "label": "Description",
+            "fieldtype": "Small Text"
+        },
+        {
+            "fieldname": "message_template",
+            "label": "Message Template",
+            "fieldtype": "Small Text",
+            "reqd": 1
+        },
+        {
+            "fieldname": "is_active",
+            "label": "Is Active",
+            "fieldtype": "Check",
+            "default": "1",
+            "in_list_view": 1
+        }
+    ],
+    "permissions": [
+        {
+            "read": 1,
+            "write": 1,
+            "create": 1,
+            "delete": 1,
+            "role": "System Manager"
+        }
+    ]
+}

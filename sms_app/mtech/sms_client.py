@@ -7,13 +7,14 @@ from sms_app.mtech.token_manager import get_valid_token, _build_url
 
 # Constants
 SEND_ENDPOINT = "/messaging/send"
+MSISDN_PATTERN = re.compile(r"^\d{8,15}$")
 
 
 def _build_message_id():
     return uuid4().hex
 
 
-def _normalize_msisdns(mobile_numbers):
+def _extract_raw_mobile_entries(mobile_numbers):
     if mobile_numbers is None:
         return []
 
@@ -40,15 +41,67 @@ def _normalize_msisdns(mobile_numbers):
     else:
         raw = [mobile_numbers]
 
-    msisdns = []
+    entries = []
     for item in raw:
         if item is None:
             continue
         value = str(item).strip()
         if not value:
             continue
-        msisdns.append(value.lstrip("+"))
-    return msisdns
+        entries.append(value)
+    return entries
+
+
+def _normalize_single_msisdn(msisdn):
+    normalized = re.sub(r"[^\d+]", "", str(msisdn or "").strip())
+    if normalized.startswith("+"):
+        normalized = normalized[1:]
+    if not MSISDN_PATTERN.fullmatch(normalized):
+        return None
+    return normalized
+
+
+def _dedupe(items):
+    seen = set()
+    deduped = []
+    for item in items:
+        if item in seen:
+            continue
+        seen.add(item)
+        deduped.append(item)
+    return deduped
+
+
+def prepare_msisdns(mobile_numbers):
+    raw_entries = _extract_raw_mobile_entries(mobile_numbers)
+    valid = []
+    invalid = []
+    duplicates = []
+    seen = set()
+
+    for entry in raw_entries:
+        normalized = _normalize_single_msisdn(entry)
+        if not normalized:
+            invalid.append(entry)
+            continue
+
+        if normalized in seen:
+            duplicates.append(normalized)
+            continue
+
+        seen.add(normalized)
+        valid.append(normalized)
+
+    return {
+        "valid": valid,
+        "invalid": _dedupe(invalid),
+        "duplicates": _dedupe(duplicates),
+        "entered_count": len(raw_entries),
+    }
+
+
+def _normalize_msisdns(mobile_numbers):
+    return prepare_msisdns(mobile_numbers).get("valid", [])
 
 
 def send_sms(
@@ -69,17 +122,40 @@ def send_sms(
     """
     settings = frappe.get_single("Mtech SMS Settings")
 
-    msisdns = _normalize_msisdns(mobile_number)
+    recipient_info = prepare_msisdns(mobile_number)
+    msisdns = recipient_info.get("valid", [])
+    invalid_entries = recipient_info.get("invalid", [])
+    duplicate_entries = recipient_info.get("duplicates", [])
     if not msisdns:
+        error_bits = ["No valid mobile numbers provided"]
+        if invalid_entries:
+            error_bits.append(f"Invalid entries: {', '.join(invalid_entries[:10])}")
+        if duplicate_entries:
+            error_bits.append(f"Duplicate entries: {', '.join(duplicate_entries[:10])}")
+        error_message = " | ".join(error_bits)
         create_sms_log(
             mobile_number,
             message,
             "Failed",
-            "No valid mobile numbers provided",
+            error_message,
             reference_doctype,
             reference_doc,
         )
+        if return_response:
+            return {
+                "success": False,
+                "status": "Failed",
+                "response": error_message,
+                "message_id": message_id or "",
+                "recipient_count": 0,
+                "sent_count": 0,
+                "failed_count": 0,
+                "invalid_entries": invalid_entries,
+                "duplicate_entries": duplicate_entries,
+            }
         return False
+
+    recipient_count = len(msisdns)
 
     # 1. Get a valid token (Gate Pass)
     token = get_valid_token()
@@ -149,11 +225,20 @@ def send_sms(
         reference_doc,
     )
 
+    sent_count = recipient_count if status == "Sent" else 0
+    failed_count = recipient_count - sent_count
+
     if return_response:
         return {
             "success": status == "Sent",
             "status": status,
             "response": api_response,
+            "message_id": payload.get("message_id"),
+            "recipient_count": recipient_count,
+            "sent_count": sent_count,
+            "failed_count": failed_count,
+            "invalid_entries": invalid_entries,
+            "duplicate_entries": duplicate_entries,
         }
 
     return status == "Sent"

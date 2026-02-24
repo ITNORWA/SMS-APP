@@ -1,57 +1,76 @@
 {
-    "doctype":  "DocType",
-    "name":  "Mtech SMS Log",
-    "module":  "Mtech",
-    "custom":  0,
-    "fields":  [
-                   {
-                       "fieldname":  "mobile_number",
-                       "label":  "To Mobile",
-                       "fieldtype":  "Phone"
-                   },
-                   {
-                       "fieldname":  "message_content",
-                       "label":  "Message",
-                       "fieldtype":  "Small Text"
-                   },
-                   {
-                       "fieldname":  "status",
-                       "label":  "Status",
-                       "fieldtype":  "Select",
-                       "options":  "Queued\nSent\nFailed"
-                   },
-                   {
-                       "fieldname":  "api_response",
-                       "label":  "API Response",
-                       "fieldtype":  "Code"
-                   },
-                   {
-                       "fieldname":  "sent_on",
-                       "label":  "Sent On",
-                       "fieldtype":  "Datetime",
-                       "default":  "Now"
-                   },
-                   {
-                       "fieldname":  "reference_doctype",
-                       "label":  "Reference DocType",
-                       "fieldtype":  "Link",
-                       "options":  "DocType"
-                   },
-                   {
-                       "fieldname":  "reference_doc",
-                       "label":  "Reference",
-                       "fieldtype":  "Dynamic Link",
-                       "options":  "reference_doctype"
-                   }
-               ],
-    "track_changes":  1,
-    "permissions":  [
-                        {
-                            "write":  1,
-                            "create":  1,
-                            "read":  1,
-                            "delete":  1,
-                            "role":  "System Manager"
-                        }
-                    ]
+    "doctype": "DocType",
+    "name": "Mtech SMS Log",
+    "module": "Mtech",
+    "custom": 0,
+    "autoname": "naming_series:",
+    "fields": [
+        {
+            "fieldname": "naming_series",
+            "label": "Series",
+            "fieldtype": "Select",
+            "options": "SMS-LOG-.YYYY.-.#####",
+            "default": "SMS-LOG-.YYYY.-.#####",
+            "reqd": 1,
+            "hidden": 1,
+            "read_only": 1
+        },
+        {
+            "fieldname": "mobile_number",
+            "label": "To Mobile",
+            "fieldtype": "Phone",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "message_content",
+            "label": "Message",
+            "fieldtype": "Small Text",
+            "read_only": 1
+        },
+        {
+            "fieldname": "status",
+            "label": "Status",
+            "fieldtype": "Select",
+            "options": "Queued\nSent\nFailed",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "api_response",
+            "label": "API Response",
+            "fieldtype": "Code",
+            "read_only": 1
+        },
+        {
+            "fieldname": "sent_on",
+            "label": "Sent On",
+            "fieldtype": "Datetime",
+            "default": "Now",
+            "read_only": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "reference_doctype",
+            "label": "Reference DocType",
+            "fieldtype": "Link",
+            "options": "DocType",
+            "read_only": 1
+        },
+        {
+            "fieldname": "reference_doc",
+            "label": "Reference",
+            "fieldtype": "Dynamic Link",
+            "options": "reference_doctype",
+            "read_only": 1,
+            "in_list_view": 1
+        }
+    ],
+    "track_changes": 1,
+    "permissions": [
+        {
+            "read": 1,
+            "role": "System Manager"
+        }
+    ]
 }
