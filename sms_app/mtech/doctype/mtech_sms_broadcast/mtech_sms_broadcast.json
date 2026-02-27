@@ -28,11 +28,19 @@
             "fieldtype": "Section Break"
         },
         {
+            "fieldname": "recipient_mode",
+            "label": "Recipient Mode",
+            "fieldtype": "Select",
+            "options": "Single Contact\nMultiple Contacts",
+            "default": "Single Contact",
+            "description": "If Single Contact is selected, use Contact Link for one recipient. If Multiple Contacts is selected, choose contacts from the list."
+        },
+        {
             "fieldname": "contact",
-            "label": "Contact",
+            "label": "Contact Link",
             "fieldtype": "Link",
             "options": "Contact",
-            "description": "Optional contact recipient."
+            "description": "Use this for one recipient when Recipient Mode is Single Contact."
         },
         {
             "fieldname": "contact_mobile_number",
@@ -41,6 +49,13 @@
             "fetch_from": "contact.mobile_no",
             "read_only": 1,
             "description": "Auto-fetched from selected contact."
+        },
+        {
+            "fieldname": "contacts",
+            "label": "Contacts",
+            "fieldtype": "Table MultiSelect",
+            "options": "Mtech SMS Broadcast Contact",
+            "description": "Use this when Recipient Mode is Multiple Contacts."
         },
         {
             "fieldname": "sms_template",

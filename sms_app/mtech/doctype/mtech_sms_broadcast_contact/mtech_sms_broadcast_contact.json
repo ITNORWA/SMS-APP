@@ -1,0 +1,28 @@
+{
+    "doctype": "DocType",
+    "name": "Mtech SMS Broadcast Contact",
+    "module": "Mtech",
+    "custom": 0,
+    "istable": 1,
+    "editable_grid": 1,
+    "fields": [
+        {
+            "fieldname": "contact",
+            "label": "Contact",
+            "fieldtype": "Link",
+            "options": "Contact",
+            "reqd": 1,
+            "in_list_view": 1
+        },
+        {
+            "fieldname": "mobile_no",
+            "label": "Mobile No",
+            "fieldtype": "Data",
+            "fetch_from": "contact.mobile_no",
+            "read_only": 1,
+            "in_list_view": 1
+        }
+    ],
+    "permissions": []
+}
+

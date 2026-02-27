@@ -94,16 +94,86 @@ class MtechSMSBroadcast(Document):
         self.failed_recipients = failed_recipients
         self.status = self._resolve_broadcast_status(sent_recipients, total_recipients)
 
+    def _recipient_mode(self):
+        if (self.recipient_mode or "").strip() == "Multiple Contacts":
+            return "Multiple Contacts"
+        return "Single Contact"
+
+    def _fetch_contact_mobile_map(self, contact_names):
+        if not contact_names:
+            return {}
+
+        contacts = frappe.get_all(
+            "Contact",
+            filters={"name": ["in", contact_names]},
+            fields=["name", "mobile_no"],
+        )
+        return {
+            row.name: (row.mobile_no or "").strip()
+            for row in contacts
+            if (row.name or "").strip()
+        }
+
+    def _get_single_contact_numbers(self):
+        contact_name = (self.contact or "").strip()
+        if not contact_name:
+            contact_mobile = (self.contact_mobile_number or "").strip()
+            return [contact_mobile] if contact_mobile else []
+
+        contact_mobile = (
+            self._fetch_contact_mobile_map([contact_name]).get(contact_name) or ""
+        ).strip()
+        if contact_mobile:
+            return [contact_mobile]
+
+        fallback_mobile = (self.contact_mobile_number or "").strip()
+        return [fallback_mobile] if fallback_mobile else []
+
+    def _get_multiple_contact_numbers(self):
+        selected_contacts = []
+        seen_contacts = set()
+
+        for row in self.get("contacts") or []:
+            contact_name = (row.contact or "").strip()
+            if not contact_name or contact_name in seen_contacts:
+                continue
+            seen_contacts.add(contact_name)
+            selected_contacts.append(contact_name)
+
+        contact_mobile_map = self._fetch_contact_mobile_map(selected_contacts)
+        return [
+            contact_mobile_map[contact_name]
+            for contact_name in selected_contacts
+            if contact_mobile_map.get(contact_name)
+        ]
+
+    def _empty_recipient_message(self):
+        if self._recipient_mode() == "Multiple Contacts":
+            return _("Select one or more contacts or enter mobile numbers.")
+        return _("Select a contact or enter mobile numbers.")
+
     def _resolve_recipient_input(self, recipient_numbers=None):
         if recipient_numbers:
             return recipient_numbers
 
-        contact_mobile = (self.contact_mobile_number or "").strip()
+        mode_numbers = (
+            self._get_multiple_contact_numbers()
+            if self._recipient_mode() == "Multiple Contacts"
+            else self._get_single_contact_numbers()
+        )
         manual_numbers = (self.mobile_numbers or "").strip()
+        recipient_parts = []
 
-        if contact_mobile and manual_numbers:
-            return f"{contact_mobile}\n{manual_numbers}"
-        return contact_mobile or manual_numbers
+        if mode_numbers:
+            recipient_parts.extend(mode_numbers)
+        if manual_numbers:
+            recipient_parts.append(manual_numbers)
+
+        if not recipient_parts:
+            return ""
+        if len(recipient_parts) == 1:
+            return recipient_parts[0]
+        return "\n".join(recipient_parts)
 
     def _send_to_recipients(self, recipients):
         message_to_send = self._build_message()
@@ -147,7 +217,7 @@ class MtechSMSBroadcast(Document):
     def send_sms(self, recipient_numbers=None):
         resolved_recipients = self._resolve_recipient_input(recipient_numbers)
         if not resolved_recipients:
-            frappe.throw(_("Select a contact or enter mobile numbers."))
+            frappe.throw(self._empty_recipient_message())
         return self._send_to_recipients(resolved_recipients)
 
     @frappe.whitelist()

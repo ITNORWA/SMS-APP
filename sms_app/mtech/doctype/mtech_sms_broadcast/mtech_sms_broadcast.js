@@ -1,9 +1,15 @@
 frappe.ui.form.on("Mtech SMS Broadcast", {
 	refresh(frm) {
 		apply_minimal_layout(frm);
+		apply_recipient_mode_ui(frm);
 		render_primary_banner(frm);
 		add_send_button(frm);
 		add_resend_failed_button(frm);
+	},
+
+	recipient_mode(frm) {
+		apply_recipient_mode_ui(frm);
+		render_primary_banner(frm);
 	},
 
 	message(frm) {
@@ -11,7 +17,11 @@ frappe.ui.form.on("Mtech SMS Broadcast", {
 	},
 
 	contact(frm) {
-		if (frm.doc.contact && !String(frm.doc.contact_mobile_number || "").trim()) {
+		if (
+			get_recipient_mode(frm) === "Single Contact" &&
+			frm.doc.contact &&
+			!String(frm.doc.contact_mobile_number || "").trim()
+		) {
 			frappe.show_alert(
 				{
 					message: __(
@@ -25,6 +35,11 @@ frappe.ui.form.on("Mtech SMS Broadcast", {
 		render_primary_banner(frm);
 	},
 
+	contacts(frm) {
+		warn_missing_multiple_contact_mobiles(frm);
+		render_primary_banner(frm);
+	},
+
 	contact_mobile_number(frm) {
 		render_primary_banner(frm);
 	},
@@ -33,6 +48,12 @@ frappe.ui.form.on("Mtech SMS Broadcast", {
 		render_primary_banner(frm);
 	},
 });
+
+function get_recipient_mode(frm) {
+	return frm.doc.recipient_mode === "Multiple Contacts"
+		? "Multiple Contacts"
+		: "Single Contact";
+}
 
 function apply_minimal_layout(frm) {
 	const advanced_fields = [
@@ -53,6 +74,13 @@ function apply_minimal_layout(frm) {
 
 	frm.toggle_display(advanced_fields, false);
 	frm.set_df_property(
+		"recipient_mode",
+		"description",
+		__(
+			"If Single Contact is selected, use Contact Link for one recipient. If Multiple Contacts is selected, choose contacts from the list."
+		)
+	);
+	frm.set_df_property(
 		"message",
 		"description",
 		__("Type the exact SMS text recipients should receive.")
@@ -60,7 +88,12 @@ function apply_minimal_layout(frm) {
 	frm.set_df_property(
 		"contact",
 		"description",
-		__("Optional contact recipient. Their Mobile No is auto-filled.")
+		__("Use this for one recipient when Recipient Mode is Single Contact.")
+	);
+	frm.set_df_property(
+		"contacts",
+		"description",
+		__("Use this when Recipient Mode is Multiple Contacts.")
 	);
 	frm.set_df_property(
 		"contact_mobile_number",
@@ -83,11 +116,27 @@ function apply_minimal_layout(frm) {
 		__("254712345678\n254700000000")
 	);
 	frm.refresh_fields([
+		"recipient_mode",
 		"message",
 		"contact",
 		"contact_mobile_number",
+		"contacts",
 		"mobile_numbers",
 	]);
+}
+
+function apply_recipient_mode_ui(frm) {
+	const single_contact_mode = get_recipient_mode(frm) === "Single Contact";
+
+	frm.toggle_display("contact", single_contact_mode);
+	frm.toggle_display("contact_mobile_number", single_contact_mode);
+	frm.toggle_display("contacts", !single_contact_mode);
+
+	frm.refresh_fields(["contact", "contact_mobile_number", "contacts"]);
+
+	if (!single_contact_mode) {
+		warn_missing_multiple_contact_mobiles(frm);
+	}
 }
 
 function add_send_button(frm) {
@@ -107,9 +156,7 @@ function add_send_button(frm) {
 			collect_recipient_sources(frm)
 		);
 		if (!recipient_validation.entered_count) {
-			frappe.msgprint(
-				__("Select a contact or enter at least one mobile number.")
-			);
+			frappe.msgprint(recipient_prompt_message(frm));
 			return;
 		}
 		if (!recipient_validation.final_count) {
@@ -236,10 +283,7 @@ function render_primary_banner(frm) {
 			collect_recipient_sources(frm)
 		);
 		if (!recipient_validation.entered_count) {
-			frm.set_intro(
-				__("Select a contact and/or add recipients, then click Send SMS."),
-				"blue"
-			);
+			frm.set_intro(recipient_intro_message(frm), "blue");
 			return;
 		}
 
@@ -293,18 +337,80 @@ function render_delivery_status_banner(frm) {
 	frm.dashboard.set_headline_alert(message, color);
 }
 
+function recipient_prompt_message(frm) {
+	if (get_recipient_mode(frm) === "Multiple Contacts") {
+		return __("Select one or more contacts or enter at least one mobile number.");
+	}
+	return __("Select a contact or enter at least one mobile number.");
+}
+
+function recipient_intro_message(frm) {
+	if (get_recipient_mode(frm) === "Multiple Contacts") {
+		return __(
+			"Select one or more contacts and/or add mobile numbers, then click Send SMS."
+		);
+	}
+	return __("Select a contact and/or add mobile numbers, then click Send SMS.");
+}
+
 function collect_recipient_sources(frm) {
 	const sources = [];
-	const contact_mobile = String(frm.doc.contact_mobile_number || "").trim();
+	const recipient_mode = get_recipient_mode(frm);
 	const extra_numbers = String(frm.doc.mobile_numbers || "").trim();
 
-	if (contact_mobile) {
-		sources.push(contact_mobile);
+	if (recipient_mode === "Multiple Contacts") {
+		const multiple_contact_entries = collect_multiple_contact_entries(frm);
+		if (multiple_contact_entries.length) {
+			sources.push(multiple_contact_entries);
+		}
+	} else {
+		const contact_mobile = String(frm.doc.contact_mobile_number || "").trim();
+		if (contact_mobile) {
+			sources.push(contact_mobile);
+		}
 	}
 	if (extra_numbers) {
 		sources.push(extra_numbers);
 	}
 	return sources;
+}
+
+function collect_multiple_contact_entries(frm) {
+	const rows = Array.isArray(frm.doc.contacts) ? frm.doc.contacts : [];
+	return rows
+		.map((row) => {
+			const mobile = String(row.mobile_no || "").trim();
+			if (mobile) {
+				return mobile;
+			}
+			return String(row.contact || "").trim();
+		})
+		.filter((entry) => entry);
+}
+
+function warn_missing_multiple_contact_mobiles(frm) {
+	if (get_recipient_mode(frm) !== "Multiple Contacts") {
+		return;
+	}
+
+	const rows = Array.isArray(frm.doc.contacts) ? frm.doc.contacts : [];
+	const missing_mobile_count = rows.filter(
+		(row) => String(row.contact || "").trim() && !String(row.mobile_no || "").trim()
+	).length;
+	if (!missing_mobile_count) {
+		return;
+	}
+
+	frappe.show_alert(
+		{
+			message: __(
+				"{0} selected contact(s) have no Mobile No. Add manual numbers for them if needed.",
+				[missing_mobile_count]
+			),
+			indicator: "orange",
+		},
+		7
+	);
 }
 
 function validate_recipients(mobile_numbers) {
