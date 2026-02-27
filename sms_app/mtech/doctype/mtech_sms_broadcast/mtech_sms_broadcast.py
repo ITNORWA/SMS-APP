@@ -94,6 +94,17 @@ class MtechSMSBroadcast(Document):
         self.failed_recipients = failed_recipients
         self.status = self._resolve_broadcast_status(sent_recipients, total_recipients)
 
+    def _resolve_recipient_input(self, recipient_numbers=None):
+        if recipient_numbers:
+            return recipient_numbers
+
+        contact_mobile = (self.contact_mobile_number or "").strip()
+        manual_numbers = (self.mobile_numbers or "").strip()
+
+        if contact_mobile and manual_numbers:
+            return f"{contact_mobile}\n{manual_numbers}"
+        return contact_mobile or manual_numbers
+
     def _send_to_recipients(self, recipients):
         message_to_send = self._build_message()
 
@@ -134,9 +145,10 @@ class MtechSMSBroadcast(Document):
 
     @frappe.whitelist()
     def send_sms(self, recipient_numbers=None):
-        if not self.mobile_numbers and not recipient_numbers:
-            frappe.throw(_("Mobile numbers are required."))
-        return self._send_to_recipients(recipient_numbers or self.mobile_numbers)
+        resolved_recipients = self._resolve_recipient_input(recipient_numbers)
+        if not resolved_recipients:
+            frappe.throw(_("Select a contact or enter mobile numbers."))
+        return self._send_to_recipients(resolved_recipients)
 
     @frappe.whitelist()
     def resend_failed_sms(self):

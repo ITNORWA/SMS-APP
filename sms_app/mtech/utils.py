@@ -1,4 +1,5 @@
 import frappe
+from frappe import _
 from sms_app.mtech.sms_client import send_sms as _send
 
 
@@ -27,6 +28,39 @@ def send_sms_via_server_script(mobile, message, message_type=None, dlr_url=None,
         dlr_url=dlr_url,
         message_id=message_id,
     )
+
+
+@frappe.whitelist()
+def send_sms(
+    receiver_list,
+    msg,
+    sender_name="",
+    success_msg=True,
+    message_type=None,
+    dlr_url=None,
+    message_id=None,
+):
+    """
+    Drop-in override for frappe.core.doctype.sms_settings.sms_settings.send_sms.
+    Routes single-message sends through Mtech and writes to Mtech SMS Log.
+    """
+    result = _send(
+        receiver_list,
+        frappe.safe_decode(msg),
+        message_type=message_type,
+        dlr_url=dlr_url,
+        message_id=message_id,
+        return_response=True,
+    )
+
+    if not result.get("success"):
+        failure_reason = result.get("response") or _("Unknown error")
+        frappe.throw(_("Failed to send SMS via Mtech. {0}").format(failure_reason))
+
+    if success_msg:
+        frappe.msgprint(_("SMS sent successfully"))
+
+    return result
 
 
 def ensure_mtech_modules():

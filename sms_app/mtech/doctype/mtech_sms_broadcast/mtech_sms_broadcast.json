@@ -11,56 +11,85 @@
             "fieldtype": "Select",
             "options": "SMS-BROADCAST-.YYYY.-.#####",
             "default": "SMS-BROADCAST-.YYYY.-.#####",
-            "reqd": 1
+            "reqd": 1,
+            "hidden": 1,
+            "read_only": 1
         },
         {
             "fieldname": "message",
             "label": "Message",
-            "fieldtype": "Small Text"
+            "fieldtype": "Small Text",
+            "reqd": 1,
+            "description": "Type the exact SMS text recipients should receive."
+        },
+        {
+            "fieldname": "recipients_section",
+            "label": "Recipients",
+            "fieldtype": "Section Break"
+        },
+        {
+            "fieldname": "contact",
+            "label": "Contact",
+            "fieldtype": "Link",
+            "options": "Contact",
+            "description": "Optional contact recipient."
+        },
+        {
+            "fieldname": "contact_mobile_number",
+            "label": "Contact Mobile",
+            "fieldtype": "Data",
+            "fetch_from": "contact.mobile_no",
+            "read_only": 1,
+            "description": "Auto-fetched from selected contact."
         },
         {
             "fieldname": "sms_template",
             "label": "SMS Template",
             "fieldtype": "Link",
             "options": "Mtech SMS Template",
-            "description": "Optional reusable template."
+            "description": "Optional reusable template.",
+            "hidden": 1
         },
         {
             "fieldname": "template_values",
             "label": "Template Values (JSON)",
             "fieldtype": "Code",
             "options": "JSON",
-            "description": "JSON placeholder values e.g. {\"name\": \"Asha\"}"
+            "description": "JSON placeholder values e.g. {\"name\": \"Asha\"}",
+            "hidden": 1
         },
         {
             "fieldname": "rendered_message",
             "label": "Rendered Message",
             "fieldtype": "Small Text",
-            "read_only": 1
+            "read_only": 1,
+            "hidden": 1
         },
         {
             "fieldname": "mobile_numbers",
             "label": "Mobile Numbers",
             "fieldtype": "Small Text",
-            "reqd": 1,
-            "description": "Comma/semicolon/newline separated or JSON list."
+            "description": "Add extra numbers separated by comma, semicolon, or new line."
         },
         {
             "fieldname": "message_type",
             "label": "Message Type",
             "fieldtype": "Select",
             "options": "Transactional\nPromotional",
-            "default": "Transactional"
+            "default": "Transactional",
+            "hidden": 1
         },
         {
             "fieldname": "dlr_url",
             "label": "DLR URL",
-            "fieldtype": "Data"
+            "fieldtype": "Data",
+            "hidden": 1
         },
         {
             "fieldname": "message_id",
             "label": "Message ID",
-            "fieldtype": "Data"
+            "fieldtype": "Data",
+            "hidden": 1
         },
         {
             "fieldname": "status",
@@ -69,41 +98,47 @@
             "options": "Draft\nSent\nPartially Sent\nFailed",
             "default": "Draft",
             "read_only": 1,
-            "in_list_view": 1
+            "in_list_view": 1,
+            "hidden": 1
         },
         {
             "fieldname": "total_recipients",
             "label": "Total Recipients",
             "fieldtype": "Int",
             "default": "0",
-            "read_only": 1
+            "read_only": 1,
+            "hidden": 1
         },
         {
             "fieldname": "sent_recipients",
             "label": "Sent Recipients",
             "fieldtype": "Int",
             "default": "0",
-            "read_only": 1
+            "read_only": 1,
+            "hidden": 1
         },
         {
             "fieldname": "failed_recipients",
             "label": "Failed Recipients",
             "fieldtype": "Int",
             "default": "0",
-            "read_only": 1
+            "read_only": 1,
+            "hidden": 1
         },
         {
             "fieldname": "sent_on",
             "label": "Sent On",
             "fieldtype": "Datetime",
             "read_only": 1,
-            "in_list_view": 1
+            "in_list_view": 1,
+            "hidden": 1
         },
         {
             "fieldname": "last_response",
             "label": "Last Response",
             "fieldtype": "Code",
-            "read_only": 1
+            "read_only": 1,
+            "hidden": 1
         }
     ],
     "permissions": [

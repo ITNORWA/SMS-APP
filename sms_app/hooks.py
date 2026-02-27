@@ -8,6 +8,10 @@ app_description = "Mtech SMS integration app for Frappe/ERPNext"
 # Mtech-only: no generic DocType triggers
 doc_events = {}
 
+override_whitelisted_methods = {
+    "frappe.core.doctype.sms_settings.sms_settings.send_sms": "sms_app.mtech.utils.send_sms",
+}
+
 scheduler_events = {
     # Refresh tokens every 50 minutes (Mtech expires in 60m)
     "cron": {

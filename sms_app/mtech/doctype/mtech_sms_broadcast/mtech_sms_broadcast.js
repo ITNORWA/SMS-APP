@@ -1,29 +1,115 @@
 frappe.ui.form.on("Mtech SMS Broadcast", {
 	refresh(frm) {
-		render_status_banner(frm);
-		frm.set_query("sms_template", () => ({
-			filters: { is_active: 1 },
-		}));
+		apply_minimal_layout(frm);
+		render_primary_banner(frm);
 		add_send_button(frm);
 		add_resend_failed_button(frm);
-		add_view_logs_button(frm);
 	},
 
-	sms_template(frm) {
-		apply_template_message(frm);
+	message(frm) {
+		render_primary_banner(frm);
+	},
+
+	contact(frm) {
+		if (frm.doc.contact && !String(frm.doc.contact_mobile_number || "").trim()) {
+			frappe.show_alert(
+				{
+					message: __(
+						"Selected contact has no Mobile No. Enter one manually in Mobile Numbers."
+					),
+					indicator: "orange",
+				},
+				7
+			);
+		}
+		render_primary_banner(frm);
+	},
+
+	contact_mobile_number(frm) {
+		render_primary_banner(frm);
+	},
+
+	mobile_numbers(frm) {
+		render_primary_banner(frm);
 	},
 });
+
+function apply_minimal_layout(frm) {
+	const advanced_fields = [
+		"naming_series",
+		"sms_template",
+		"template_values",
+		"rendered_message",
+		"message_type",
+		"dlr_url",
+		"message_id",
+		"status",
+		"total_recipients",
+		"sent_recipients",
+		"failed_recipients",
+		"sent_on",
+		"last_response",
+	];
+
+	frm.toggle_display(advanced_fields, false);
+	frm.set_df_property(
+		"message",
+		"description",
+		__("Type the exact SMS text recipients should receive.")
+	);
+	frm.set_df_property(
+		"contact",
+		"description",
+		__("Optional contact recipient. Their Mobile No is auto-filled.")
+	);
+	frm.set_df_property(
+		"contact_mobile_number",
+		"description",
+		__("Loaded from Contact.Mobile No.")
+	);
+	frm.set_df_property(
+		"mobile_numbers",
+		"description",
+		__("Add extra numbers separated by comma, semicolon, or new line.")
+	);
+	frm.set_df_property(
+		"message",
+		"placeholder",
+		__("Example: Hello, your invoice is ready for collection.")
+	);
+	frm.set_df_property(
+		"mobile_numbers",
+		"placeholder",
+		__("254712345678\n254700000000")
+	);
+	frm.refresh_fields([
+		"message",
+		"contact",
+		"contact_mobile_number",
+		"mobile_numbers",
+	]);
+}
 
 function add_send_button(frm) {
 	if (frm.doc.docstatus !== 0) {
 		return;
 	}
 
-	const label = frm.doc.status === "Sent" ? __("Resend SMS") : __("Send SMS");
+	const label = frm.doc.status === "Sent" ? __("Send Again") : __("Send SMS");
 	frm.add_custom_button(label, () => {
-		const recipient_validation = validate_recipients(frm.doc.mobile_numbers);
+		const message = (frm.doc.message || "").trim();
+		if (!message) {
+			frappe.msgprint(__("Enter the message before sending."));
+			return;
+		}
+
+		const recipient_validation = validate_recipients(
+			collect_recipient_sources(frm)
+		);
 		if (!recipient_validation.entered_count) {
-			frappe.msgprint(__("Enter at least one mobile number."));
+			frappe.msgprint(
+				__("Select a contact or enter at least one mobile number.")
+			);
 			return;
 		}
 		if (!recipient_validation.final_count) {
@@ -33,12 +119,6 @@ function add_send_button(frm) {
 					include_lists: true,
 				})
 			);
-			return;
-		}
-
-		const template_check = validate_template_requirements(frm);
-		if (template_check.error) {
-			frappe.msgprint(template_check.error);
 			return;
 		}
 
@@ -89,14 +169,14 @@ function add_send_button(frm) {
 					frm.reload_doc();
 				},
 			});
-			};
+		};
 
-			if (frm.is_dirty() || frm.is_new()) {
-				frm.save().then(() => frappe.confirm(confirmation, run));
-			} else {
-				frappe.confirm(confirmation, run);
-			}
-		});
+		if (frm.is_dirty() || frm.is_new()) {
+			frm.save().then(() => frappe.confirm(confirmation, run));
+		} else {
+			frappe.confirm(confirmation, run);
+		}
+	});
 }
 
 function add_resend_failed_button(frm) {
@@ -145,25 +225,49 @@ function add_resend_failed_button(frm) {
 	});
 }
 
-function add_view_logs_button(frm) {
-	if (frm.is_new()) {
+function render_primary_banner(frm) {
+	frm.set_intro(null);
+	frm.dashboard.clear_headline();
+
+	const status = frm.doc.status || "Draft";
+	const draft_like = frm.is_new() || status === "Draft";
+	if (draft_like) {
+		const recipient_validation = validate_recipients(
+			collect_recipient_sources(frm)
+		);
+		if (!recipient_validation.entered_count) {
+			frm.set_intro(
+				__("Select a contact and/or add recipients, then click Send SMS."),
+				"blue"
+			);
+			return;
+		}
+
+		const banner = __(
+			"Recipients ready: {0}/{1} | Invalid: {2} | Duplicates removed: {3}",
+			[
+				recipient_validation.final_count,
+				recipient_validation.entered_count,
+				recipient_validation.invalid_entries.length,
+				recipient_validation.duplicate_entries.length,
+			]
+		);
+		let color = "red";
+		if (recipient_validation.final_count) {
+			color =
+				recipient_validation.invalid_entries.length ||
+				recipient_validation.duplicate_entries.length
+					? "orange"
+					: "green";
+		}
+		frm.dashboard.set_headline_alert(banner, color);
 		return;
 	}
 
-	frm.add_custom_button(__("View Delivery Logs"), () => {
-		frappe.set_route("List", "Mtech SMS Log", {
-			reference_doctype: frm.doctype,
-			reference_doc: frm.doc.name,
-		});
-	});
+	render_delivery_status_banner(frm);
 }
 
-function render_status_banner(frm) {
-	frm.dashboard.clear_headline();
-	if (frm.is_new()) {
-		return;
-	}
-
+function render_delivery_status_banner(frm) {
 	const total = Number(frm.doc.total_recipients || 0);
 	const sent = Number(frm.doc.sent_recipients || 0);
 	const failed = Number(frm.doc.failed_recipients || 0);
@@ -189,98 +293,18 @@ function render_status_banner(frm) {
 	frm.dashboard.set_headline_alert(message, color);
 }
 
-function apply_template_message(frm) {
-	if (!frm.doc.sms_template) {
-		return;
+function collect_recipient_sources(frm) {
+	const sources = [];
+	const contact_mobile = String(frm.doc.contact_mobile_number || "").trim();
+	const extra_numbers = String(frm.doc.mobile_numbers || "").trim();
+
+	if (contact_mobile) {
+		sources.push(contact_mobile);
 	}
-
-	frappe.db
-		.get_value("Mtech SMS Template", frm.doc.sms_template, "message_template")
-		.then((r) => {
-			const template_message = (r.message && r.message.message_template) || "";
-			if (!template_message) {
-				return;
-			}
-
-			const current_message = (frm.doc.message || "").trim();
-			if (!current_message || current_message === template_message) {
-				frm.set_value("message", template_message);
-				return;
-			}
-
-			frappe.confirm(
-				__("Replace current message with selected template content?"),
-				() => frm.set_value("message", template_message)
-			);
-		});
-}
-
-function validate_template_requirements(frm) {
-	const raw_message = (frm.doc.message || "").trim();
-	if (!raw_message) {
-		return {
-			error: __("Message is required. Enter a message or choose a template."),
-		};
+	if (extra_numbers) {
+		sources.push(extra_numbers);
 	}
-
-	if (!frm.doc.sms_template) {
-		return {};
-	}
-
-	const parse_result = parse_template_values(frm.doc.template_values);
-	if (parse_result.error) {
-		return {
-			error: parse_result.error,
-		};
-	}
-
-	const missing_keys = find_missing_placeholders(raw_message, parse_result.values);
-	if (missing_keys.length) {
-		return {
-			error: __("Missing template values for: {0}", [missing_keys.join(", ")]),
-		};
-	}
-
-	return {};
-}
-
-function parse_template_values(raw_values) {
-	const trimmed = String(raw_values || "").trim();
-	if (!trimmed) {
-		return { values: {} };
-	}
-
-	try {
-		const parsed = JSON.parse(trimmed);
-		if (!parsed || Array.isArray(parsed) || typeof parsed !== "object") {
-			return {
-				error: __("Template Values must be a JSON object."),
-			};
-		}
-		return { values: parsed };
-	} catch (error) {
-		return {
-			error: __("Template Values must be valid JSON."),
-		};
-	}
-}
-
-function find_missing_placeholders(template_message, values) {
-	const found = new Set();
-	const missing = [];
-	const pattern = /{{\s*([a-zA-Z_][\w]*)\s*}}/g;
-	let match = null;
-	while ((match = pattern.exec(String(template_message || ""))) !== null) {
-		const key = match[1];
-		if (found.has(key)) {
-			continue;
-		}
-		found.add(key);
-		if (!Object.prototype.hasOwnProperty.call(values, key) || values[key] === null) {
-			missing.push(key);
-		}
-	}
-	return missing;
+	return sources;
 }
 
 function validate_recipients(mobile_numbers) {
@@ -322,6 +346,10 @@ function validate_recipients(mobile_numbers) {
 function extract_recipient_entries(mobile_numbers) {
 	if (!mobile_numbers) {
 		return [];
+	}
+
+	if (Array.isArray(mobile_numbers)) {
+		return mobile_numbers.flatMap((value) => extract_recipient_entries(value));
 	}
 
 	const cleaned = String(mobile_numbers).trim();
